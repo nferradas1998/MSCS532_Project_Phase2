@@ -1,57 +1,50 @@
-class HashTable:
-    def __init__(table, size=100): # Using __init__ methos for automatic invocation
-        table.size = size
-        table.table = [[] for _ in range(size)]  # Create a list of empty lists for chaining
+class InventoryHashTable:
 
-    def hash(table, key):
-        return hash(key) % table.size # Going to use this simple hash function for now, this cannot be used for the final implementation since it would create too many collisions
+    def __init__(table):
+        # Initializing the table as a dictionary 
+        table.inventory = {}
 
-    def upsert(table, key, value):
-        index = table.hash(key)
-        for pair in table.table[index]:
-            if pair[0] == key: # check if item exists
-                pair[1] = value  # update existing item
-                return
-        table.table[index].append([key, value])  # insert new item
+    def upsert(table, product_id, name, quantity, price): ## Use the id as the index for a simple first implementation
+        table.inventory[product_id] = {
+            "Name": name,
+            "Quantity": quantity,
+            "Price": price
+        }
 
-    def search(table, key):
-        index = table.hash(key)
-        for pair in table.table[index]:
-            if pair[0] == key:
-                return pair[1]  # Return the value
-        return None  # return none when nothing is found
+    def search(table, product_id):
+        return table.inventory.get(product_id, None)
 
-    def delete(table, key):
-        index = table.hash(key)
-        for i, pair in enumerate(table.table[index]):
-            if pair[0] == key:
-                del table.table[index][i]  # Remove the item
-                return True # return true when item was deleted
-        return False  # return false when nothing was found and hence nothing was deleted
+    def delete(table, product_id):
+        return table.inventory.pop(product_id, None) is not None
 
-    def print_table(table): # Function to show the effect of operatons
-        for i, bucket in enumerate(table.table):
-            if bucket:
-                print(f"Index {i}: {bucket}")
+    def get_inventory(table):
+        return [{**{"ID": pid}, **details} for pid, details in table.inventory.items()]
 
-inventory = HashTable(size=50)
+# As an example I'm creating an inventory with 4 products
+inventory = InventoryHashTable()
+inventory.upsert(10, "Laptop", 5, 1200.00)
+inventory.upsert(20, "Monitor", 10, 300.00)
+inventory.upsert(5, "Mouse", 50, 25.00)
+inventory.upsert(15, "Keyboard", 20, 45.00)
 
-# Adding items to the inventory
-inventory.upsert("item_1", {"name": "Arcade Machine", "quantity": 5, "price": 1500})
-inventory.upsert("item_2", {"name": "Joystick", "quantity": 20, "price": 30})
+print("=========================initial inventory=========================\n")
+for product in inventory.get_inventory():
+    print(product)
 
-inventory.print_table()
+print("\n====================Search functionality=========================\n")
+print("Search Product ID 10:", inventory.search(10)) ## search for product with ID 10 (should print laptop)
+print("Search Product ID 100:", inventory.search(100)) ## search for product with ID 100 (should not get anything)
 
-# Searching for an item
-print("Item 1 Details:", inventory.search("item_1"))
+print("\n=====================Delete Functionality=======================")
+print("\nDeleting Product ID 5") ## Deletes product with ID 5
+inventory.delete(5)
+print("\nInventory After Deletion (Sorted by ID):")
+for product in inventory.get_inventory():
+    print(product)
 
-# Updating an existing item
-inventory.upsert("item_1", {"name": "Arcade Machine", "quantity": 4, "price": 1500})
-print("Updated Item 1 Details:", inventory.search("item_1"))
 
-# Deleting an item
-inventory.delete("item_2")
-print("Item 2 After Deletion:", inventory.search("item_2"))
-
-# Display full inventory
-inventory.print_table()
+print("\n===================Update Product========================\n")
+inventory.upsert(10, "Laptop", 9, 1200.00) ## Update the stock from 5 to 9
+print("\nInventory After Update (Sorted by ID):")
+for product in inventory.get_inventory():
+    print(product)

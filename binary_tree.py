@@ -1,94 +1,155 @@
-class Node:
-    def __init__(node, key, value): # Using __init__ function for automatic invocation
-        node.key = key
-        node.value = value
+class ProductNode:
+    def __init__(node, product_id, name, quantity, price): # using __init__ function for automatic invocation
+        node.id = product_id
+        node.name = name
+        node.quantity = quantity
+        node.price = price
         node.left = None
         node.right = None
 
-class BinarySearchTree: # Using __init__ function for automatic invocation
-    def __init__(tree):
-        tree.root = None
-    
-    def insert(tree, key, value):
-        tree.root = tree._insert_recursive(tree.root, key, value)
-    
-    def _insert_recursive(tree, node, key, value):
-        if node is None:
-            return Node(key, value)  # Create new node if empty spot found
-        if key < node.key:
-            node.left = tree._insert_recursive(node.left, key, value)
-        elif key > node.key:
-            node.right = tree._insert_recursive(node.right, key, value)
-        else:
-            node.value = value  # Update value if key already exists
-        return node
-    
-    def search(tree, key):
-        return tree._search_recursive(tree.root, key)
-    
-    def _search_recursive(tree, node, key):
-        if node is None:
-            return None  # Key not found
-        if key == node.key:
-            return node.value
-        elif key < node.key:
-            return tree._search_recursive(node.left, key)
-        else:
-            return tree._search_recursive(node.right, key)
-    
-    def delete(tree, key):
-        tree.root = tree._delete_recursive(tree.root, key)
-    
-    def _delete_recursive(tree, node, key):
-        """Helper method to recursively delete a node."""
-        if node is None:
-            return None
+class InventoryBST:
+    def __init__(inv): # using __init__ function for automatic invocation
+        inv.root = None
+
+    def upsert(inv, product_id, name, quantity, price):
+        new_node = ProductNode(product_id, name, quantity, price)
         
-        if key < node.key:
-            node.left = tree._delete_recursive(node.left, key)
-        elif key > node.key:
-            node.right = tree._delete_recursive(node.right, key)
+        if not inv.root:
+            inv.root = new_node
+            return
+
+        current = inv.root
+        parent = None
+
+        while current:
+            parent = current
+            if product_id == current.id: # check if product already exists
+                # Update existing product
+                current.name = name
+                current.quantity = quantity
+                current.price = price
+                return
+            elif product_id < current.id:
+                current = current.left
+            else:
+                current = current.right
+
+        # Insert new product
+        if product_id < parent.id:
+            parent.left = new_node
         else:
-            if node.left is None:
-                return node.right  # Return right child if left is None
-            elif node.right is None:
-                return node.left  # Return left child if right is None
-            
-            # Node with two children: Get the inorder successor (smallest in right subtree)
-            temp = tree._find_min(node.right)
-            node.key, node.value = temp.key, temp.value  # Copy successor data
-            node.right = tree._delete_recursive(node.right, temp.key)  # Delete successor
-        return node
-    
-    def _find_min(tree, node):
-        while node.left is not None:
-            node = node.left
-        return node
-    
-    def inorder_traversal(tree):
-        """Display all items in inventory in sorted order."""
-        tree._inorder_recursive(tree.root)
-    
-    def _inorder_recursive(tree, node):
-        if node:
-            tree._inorder_recursive(node.left)
-            print(f"{node.key}: {node.value}")
-            tree._inorder_recursive(node.right)
+            parent.right = new_node
 
-# Example usage
-inventory = BinarySearchTree()
+    def search(inv, product_id):
+        current = inv.root
+        while current:
+            if product_id == current.id:
+                return {
+                    "ID": current.id,
+                    "Name": current.name,
+                    "Quantity": current.quantity,
+                    "Price": current.price
+                }
+            elif product_id < current.id:
+                current = current.left
+            else:
+                current = current.right
+        return None
 
-# Adding items to inventory
-inventory.insert("item_1", {"name": "Arcade Machine", "quantity": 5, "price": 1500})
-inventory.insert("item_2", {"name": "Joystick", "quantity": 20, "price": 30})
-inventory.insert("item_3", {"name": "Game Cartridge", "quantity": 10, "price": 40})
+    def delete(inv, product_id):
+        current = inv.root
+        parent = None
 
-# Searching for an item
-print("Item 1 Details:", inventory.search("item_1"))
+        # find the product node
+        while current and current.id != product_id:
+            parent = current
+            if product_id < current.id:
+                current = current.left
+            else:
+                current = current.right
 
-# Deleting an item
-inventory.delete("item_2")
-print("Item 2 After Deletion:", inventory.search("item_2"))
+        if not current:  # Product not found
+            return False
 
-# Display full inventory
-inventory.inorder_traversal()
+        ## We need to check the use case to know how to delete the product
+        # Case 1: Node with only one child or no child
+        if not current.left or not current.right:
+            new_child = current.left if current.left else current.right
+
+            if not parent:  # Deleting root node
+                inv.root = new_child
+            elif parent.left == current:
+                parent.left = new_child
+            else:
+                parent.right = new_child
+
+        # Case 2: Node with two children
+        else:
+            successor_parent = current
+            successor = current.right
+
+            while successor.left:
+                successor_parent = successor
+                successor = successor.left
+
+            # Copy successor's values to current node
+            current.id, current.name, current.quantity, current.price = successor.id, successor.name, successor.quantity, successor.price
+
+            # Remove the successor node
+            if successor_parent.left == successor:
+                successor_parent.left = successor.right
+            else:
+                successor_parent.right = successor.right
+
+        return True
+
+    def inorder_traversal(inv):
+        stack = []
+        current = inv.root
+        result = []
+
+        while stack or current:
+            while current:
+                stack.append(current)
+                current = current.left
+
+            current = stack.pop()
+            result.append({
+                "ID": current.id,
+                "Name": current.name,
+                "Quantity": current.quantity,
+                "Price": current.price
+            })
+            current = current.right
+
+        return result
+
+# As an example I'm creating an inventory with 4 products
+inventory = InventoryBST()
+inventory.upsert(10, "Laptop", 5, 1200.00)
+inventory.upsert(20, "Monitor", 10, 300.00)
+inventory.upsert(5, "Mouse", 50, 25.00)
+inventory.upsert(15, "Keyboard", 20, 45.00)
+
+print("=========================initial inventory=========================\n")
+for product in inventory.inorder_traversal():
+    print(product)
+
+print("\n====================Search functionality=========================\n")
+print("Search Product ID 10:", inventory.search(10)) ## search for product with ID 10 (should print laptop)
+print("Search Product ID 100:", inventory.search(100)) ## search for product with ID 100 (should not get anything)
+
+print("\n=====================Delete Functionality=======================")
+print("\nDeleting Product ID 5") ## Deletes product with ID 5
+inventory.delete(5)
+print("\nInventory After Deletion (Sorted by ID):")
+for product in inventory.inorder_traversal():
+    print(product)
+
+
+print("\n===================Update Product========================\n")
+inventory.upsert(10, "Laptop", 9, 1200.00) ## Update the stock from 5 to 9
+print("\nInventory After Update (Sorted by ID):")
+for product in inventory.inorder_traversal():
+    print(product)
+
