@@ -38,13 +38,13 @@ print("Search Product ID 100:", inventory.search(100)) ## search for product wit
 print("\n=====================Delete Functionality=======================")
 print("\nDeleting Product ID 5") ## Deletes product with ID 5
 inventory.delete(5)
-print("\nInventory After Deletion (Sorted by ID):")
+print("\nInventory After Deletion:")
 for product in inventory.get_inventory():
     print(product)
 
 
 print("\n===================Update Product========================\n")
 inventory.upsert(10, "Laptop", 9, 1200.00) ## Update the stock from 5 to 9
-print("\nInventory After Update (Sorted by ID):")
+print("\nInventory After Update:")
 for product in inventory.get_inventory():
     print(product)
